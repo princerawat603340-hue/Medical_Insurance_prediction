@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-Powered Medical Insurance Cost Predictor. Get instant, accurate health insurance premium estimations based on machine learning.">
+    <title>HealthShield AI - Medical Insurance Cost Predictor</title>
+
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <!-- Dynamic Background Elements -->
+    <div class="bg-shape shape-1"></div>
+    <div class="bg-shape shape-2"></div>
+    <div class="bg-shape shape-3"></div>
+
+    <div class="app-container">
+        
+        <!-- App Header -->
+        <header class="app-header">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-heart-pulse"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>HealthShield <span>AI</span></h1>
+                    <p class="tagline">Smart Medical Insurance Premium Estimator</p>
+                </div>
+            </div>
+            <div class="header-badge">
+                <i class="fa-solid fa-brain"></i> Machine Learning Powered
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- Input Form Card -->
+            <section class="card form-card">
+                <div class="card-header">
+                    <h2><i class="fa-solid fa-sliders"></i> Enter Policyholder Details</h2>
+                    <p>Provide accurate health metrics to calculate expected annual insurance cost.</p>
+                </div>
+
+                <!-- Flash Server Error Alert (If any) -->
+                {% if error %}
+                <div class="alert alert-error" id="server-error-alert">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ error }}</span>
+                    <button type="button" class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+                {% endif %}
+
+                <!-- Dynamic Front-end Error Alert -->
+                <div class="alert alert-error hidden" id="client-error-alert">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span id="client-error-message">Please correct the errors in the form.</span>
+                    <button type="button" class="alert-close" onclick="hideClientError()">&times;</button>
+                </div>
+
+                <form id="prediction-form" action="/predict" method="POST" class="form-grid" novalidate>
+                    
+                    <!-- Age Input -->
+                    <div class="form-group">
+                        <label for="age">
+                            <i class="fa-solid fa-user-clock"></i> Age (Years) <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="number" id="age" name="age" min="18" max="100" placeholder="e.g. 28" required
+                                   value="{% if result %}{{ result.inputs.age }}{% endif %}">
+                            <span class="input-unit">yrs</span>
+                        </div>
+                        <span class="error-text" id="age-error"></span>
+                    </div>
+
+                    <!-- Gender Input -->
+                    <div class="form-group">
+                        <label for="sex">
+                            <i class="fa-solid fa-venus-mars"></i> Gender <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <select id="sex" name="sex" required>
+                                <option value="" disabled {% if not result %}selected{% endif %}>Select Gender</option>
+                                <option value="male" {% if result and result.inputs.sex == 'Male' %}selected{% endif %}>Male</option>
+                                <option value="female" {% if result and result.inputs.sex == 'Female' %}selected{% endif %}>Female</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-icon"></i>
+                        </div>
+                        <span class="error-text" id="sex-error"></span>
+                    </div>
+
+                    <!-- BMI Input -->
+                    <div class="form-group">
+                        <label for="bmi">
+                            <i class="fa-solid fa-weight-scale"></i> Body Mass Index (BMI) <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="number" id="bmi" name="bmi" step="0.1" min="10.0" max="60.0" placeholder="e.g. 24.5" required
+                                   value="{% if result %}{{ result.inputs.bmi }}{% endif %}">
+                            <span class="input-unit">kg/m²</span>
+                        </div>
+                        <div class="bmi-hint">
+                            <span>Normal: 18.5 - 24.9</span> | <span>Overweight: 25.0 - 29.9</span>
+                        </div>
+                        <span class="error-text" id="bmi-error"></span>
+                    </div>
+
+                    <!-- Children Input -->
+                    <div class="form-group">
+                        <label for="children">
+                            <i class="fa-solid fa-child-reaching"></i> Dependent Children <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <input type="number" id="children" name="children" min="0" max="10" placeholder="e.g. 1" required
+                                   value="{% if result %}{{ result.inputs.children }}{% else %}0{% endif %}">
+                            <span class="input-unit">kids</span>
+                        </div>
+                        <span class="error-text" id="children-error"></span>
+                    </div>
+
+                    <!-- Smoking Status Input -->
+                    <div class="form-group">
+                        <label for="smoker">
+                            <i class="fa-solid fa-smoking"></i> Smoking Habit <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <select id="smoker" name="smoker" required>
+                                <option value="" disabled {% if not result %}selected{% endif %}>Select Smoking Status</option>
+                                <option value="no" {% if result and result.inputs.smoker == 'No' %}selected{% endif %}>Non-Smoker</option>
+                                <option value="yes" {% if result and result.inputs.smoker == 'Yes' %}selected{% endif %}>Smoker</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-icon"></i>
+                        </div>
+                        <span class="error-text" id="smoker-error"></span>
+                    </div>
+
+                    <!-- Region Input -->
+                    <div class="form-group">
+                        <label for="region">
+                            <i class="fa-solid fa-location-dot"></i> Residential Region <span class="required">*</span>
+                        </label>
+                        <div class="input-wrapper">
+                            <select id="region" name="region" required>
+                                <option value="" disabled {% if not result %}selected{% endif %}>Select Region</option>
+                                <option value="southeast" {% if result and result.inputs.region == 'Southeast' %}selected{% endif %}>Southeast</option>
+                                <option value="southwest" {% if result and result.inputs.region == 'Southwest' %}selected{% endif %}>Southwest</option>
+                                <option value="northeast" {% if result and result.inputs.region == 'Northeast' %}selected{% endif %}>Northeast</option>
+                                <option value="northwest" {% if result and result.inputs.region == 'Northwest' %}selected{% endif %}>Northwest</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-icon"></i>
+                        </div>
+                        <span class="error-text" id="region-error"></span>
+                    </div>
+
+                    <!-- Form Action Buttons -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submit-btn">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>Predict Insurance Cost</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="reset-btn">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span>Reset</span>
+                        </button>
+                    </div>
+
+                </form>
+            </section>
+
+            <!-- Loading Spinner State (Hidden by default) -->
+            <div class="loading-overlay hidden" id="loading-spinner">
+                <div class="spinner-box">
+                    <div class="pulse-ring"></div>
+                    <i class="fa-solid fa-heart-pulse spinner-icon"></i>
+                    <p class="loading-text">Analyzing Health Data...</p>
+                    <p class="loading-subtext">Executing ML Pipeline Predictor</p>
+                </div>
+            </div>
+
+            <!-- Prediction Results Card -->
+            <section class="card result-card {% if not result %}hidden{% endif %}" id="result-section">
+                <div class="result-header">
+                    <span class="badge" id="cost-badge">
+                        {% if result %}{{ result.cost_category }}{% else %}Cost Tier{% endif %}
+                    </span>
+                    <h2><i class="fa-solid fa-file-invoice-dollar"></i> Estimated Insurance Premium</h2>
+                </div>
+
+                <div class="result-body">
+                    <!-- Indian Rupee Display -->
+                    <div class="price-display">
+                        <div class="currency-tag">Annual Estimated Charge</div>
+                        <div class="main-price" id="inr-display">
+                            {% if result %}{{ result.prediction_inr }}{% else %}₹0.00{% endif %}
+                        </div>
+                        <div class="usd-equivalent" id="usd-display">
+                            Original USD: {% if result %}{{ result.prediction_usd }}{% else %}$0.00{% endif %}
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Summary Grid of User Inputs -->
+                    <h3><i class="fa-solid fa-clipboard-check"></i> Parameter Summary</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="label">Age:</span>
+                            <span class="value" id="sum-age">{% if result %}{{ result.inputs.age }} Yrs{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Gender:</span>
+                            <span class="value" id="sum-sex">{% if result %}{{ result.inputs.sex }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">BMI:</span>
+                            <span class="value" id="sum-bmi">{% if result %}{{ result.inputs.bmi }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Children:</span>
+                            <span class="value" id="sum-children">{% if result %}{{ result.inputs.children }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Smoker:</span>
+                            <span class="value" id="sum-smoker">{% if result %}{{ result.inputs.smoker }}{% else %}-{% endif %}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Region:</span>
+                            <span class="value" id="sum-region">{% if result %}{{ result.inputs.region }}{% else %}-{% endif %}</span>
+                        </div>
+                    </div>
+
+                    <div class="result-footer">
+                        <p class="disclaimer">
+                            <i class="fa-solid fa-shield-halved"></i> Estimate generated directly using Scikit-Learn Pipeline (`model.pkl`).
+                        </p>
+                        <button type="button" class="btn btn-outline" onclick="scrollToForm()">
+                            <i class="fa-solid fa-pen-to-square"></i> Modify Details
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Application Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 HealthShield AI. Production-Ready Machine Learning Flask Application.</p>
+        </footer>
+
+    </div>
+
+    <!-- Application Script -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
