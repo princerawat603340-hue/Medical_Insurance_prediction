@@ -162,7 +162,7 @@ The trained model is serialized using pickle and integrated with Flask for real-
 
 | Metric   | Score          |
 | -------- | -------------- |
-| R² Score | Add your score |
+| R² Score | 0.8 |
 | MAE      | Add your value |
 
 ---
